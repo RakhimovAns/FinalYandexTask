@@ -1,0 +1,43 @@
+  syntax = "proto3";
+
+package desc;
+
+option go_package="github.com/RakhimovAns/desc;desc";
+
+service calculus{
+  rpc Calculate(expression) returns (ID);
+  rpc Status(ID) returns (Result);
+  rpc Register(User) returns (Result);
+  rpc Login(User) returns (Token);
+  rpc Logout(Empty) returns (Empty);
+}
+
+message expression{
+  string expression = 1;
+  int64 add_time = 2;
+  int64 sub_time = 3;
+  int64 multiply_time = 4;
+  int64 divide_time = 5;
+  bool is_counted = 6;
+  int64 result = 7;
+}
+
+message ID{
+  int64 id = 1;
+}
+
+message Result{
+  string result = 1;
+}
+
+message User{
+  string name = 1;
+  string password = 2;
+}
+
+
+message Token{
+  string token = 1;
+}
+
+message Empty {}
