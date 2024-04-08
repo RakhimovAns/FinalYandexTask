@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"strconv"
 )
 
 const (
@@ -42,6 +43,31 @@ func (s *server) Calculate(ctx context.Context, req *desc.Expression) (*desc.ID,
 	}
 	return ID, nil
 }
+
+func (s *server) Status(ctx context.Context, req *desc.ID) (*desc.Result, error) {
+	ID := req.Id
+	expression := initializers.GetByID(ID)
+	if expression.IsCounted {
+		result := strconv.Itoa(int(expression.Result))
+		Result := &desc.Result{
+			Result: result,
+		}
+		return Result, nil
+	}
+	go func() {
+		result, err := service.CountExpression(expression)
+		if err != nil {
+			log.Printf("Error counting expression: %v", err)
+			return
+		}
+		initializers.SetResult(ID, result)
+	}()
+	Result := &desc.Result{
+		Result: "is counting",
+	}
+	return Result, nil
+}
+
 func main() {
 	initializers.ConnectToDB()
 	initializers.CreateTable()

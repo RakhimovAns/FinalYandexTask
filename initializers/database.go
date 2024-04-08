@@ -54,3 +54,13 @@ func CreateModel(expression models.Expression) int64 {
 	DB.Table("expressions").Where("expression=? AND add_time=? AND sub_time=? AND multiply_time=? AND divide_time=?", expression.Expression, expression.AddTime, expression.SubTime, expression.MultiplyTime, expression.DivideTime).Find(&expression)
 	return expression.ID
 }
+
+func GetByID(ID int64) models.Expression {
+	var expression models.Expression
+	DB.Table("expressions").Where("id=?", ID).Find(&expression)
+	return expression
+}
+
+func SetResult(id, result interface{}) {
+	DB.Model(&expression{}).Where("id = ?", id).Updates(map[string]interface{}{"result": result, "is_counted": true})
+}
