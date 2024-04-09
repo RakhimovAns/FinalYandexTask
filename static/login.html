@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .container {
+            margin-top: 50px;
+            width: 50%;
+        }
+        .error-message {
+            color: red;
+        }
+        .login-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Login</h1>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="name">Username:</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+        <div class="error-message" id="errorMessage"></div>
+    </form>
+    <a href="/reg" class="btn btn-secondary">Register</a>
+</div>
+<script>
+    document.getElementById("loginForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        var username = document.getElementById("name").value;
+        var password = document.getElementById("password").value;
+
+        var formData = {
+            name: username,
+            password: password
+        };
+
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    // Сохраняем токен в куки
+                    document.cookie = "token=" + data.token + ";path=/";
+                    // Перенаправляем на главную страницу
+                    window.location.href = "http://localhost:8080/";
+                } else {
+                    document.getElementById("errorMessage").textContent = data.error;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    });
+</script>
+</body>
+</html>

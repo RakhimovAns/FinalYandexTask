@@ -3,6 +3,7 @@ package initializers
 import (
 	"encoding/hex"
 	"github.com/RakhimovAns/FinalYandexTask/models"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -86,4 +87,28 @@ func Register(customer models.User) error {
 	}
 	DB.Create(&models.User{Password: hex.EncodeToString(hash), Name: customer.Name})
 	return nil
+}
+
+func Login(customer models.User) (string, error) {
+	var existingUser models.User
+	err := DB.Where("name = ?", customer.Name).First(&existingUser).Error
+	if err != nil {
+		return "", models.ErrUserNotExist
+	}
+	hashed, err := hex.DecodeString(existingUser.Password)
+	if err != nil {
+		log.Println(err)
+	}
+	err = bcrypt.CompareHashAndPassword(hashed, []byte(customer.Password))
+	if err != nil {
+		return "", models.ErrInvalidPassword
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &models.TokenClaim{
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(1 * time.Hour).Unix(),
+		},
+		existingUser.ID,
+	})
+	TokenStr, err := token.SignedString([]byte("My Key"))
+	return TokenStr, nil
 }

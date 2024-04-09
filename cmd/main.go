@@ -7,11 +7,16 @@ import (
 	"github.com/RakhimovAns/FinalYandexTask/initializers"
 	"github.com/RakhimovAns/FinalYandexTask/models"
 	"github.com/RakhimovAns/FinalYandexTask/pkg/service"
+	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"net/http"
+	"net/url"
+	"path/filepath"
 	"strconv"
+	"time"
 )
 
 const (
@@ -84,6 +89,52 @@ func (s *server) Register(ctx context.Context, req *desc.User) (*desc.Result, er
 	return Result, nil
 }
 
+func Logout(c *gin.Context) {
+	// Получаем список куки из запроса
+	cookies := c.Request.Cookies()
+
+	// Проходимся по всем кукам и устанавливаем MaxAge равным -1 для удаления
+	for _, cookie := range cookies {
+		newCookie := &http.Cookie{
+			Name:   cookie.Name,
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		}
+		c.SetCookie(cookie.Name, "", -1, "/", "", false, true)
+		c.SetCookie(newCookie.Name, newCookie.Value, newCookie.MaxAge, newCookie.Path, newCookie.Domain, newCookie.Secure, newCookie.HttpOnly)
+	}
+
+	// Выполняем перенаправление на страницу входа
+	c.Redirect(http.StatusSeeOther, "/log")
+}
+func Login(c *gin.Context) {
+	var user models.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		log.Printf(err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user data: " + err.Error()})
+		return
+	}
+	token, err := initializers.Login(user)
+	if err == models.ErrUserNotExist {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No account with this name"})
+		return
+	} else if err == models.ErrInvalidPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords don't match"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	livingTime := 60 * time.Minute
+	expiration := time.Now().Add(livingTime)
+	// Set token in cookie
+
+	cookie := http.Cookie{Name: "token", Value: url.QueryEscape(token), Expires: expiration}
+	http.SetCookie(c.Writer, &cookie)
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
 func main() {
 	initializers.ConnectToDB()
 	initializers.CreateTable()
@@ -101,4 +152,19 @@ func startGRPCServer() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func startGinServer() {
+	r := gin.Default()
+	r.Static("/static", "./static")
+	r.GET("/reg", func(c *gin.Context) {
+		c.File(filepath.Join("static", "register.html"))
+	})
+	r.GET("/log", func(c *gin.Context) {
+		c.File(filepath.Join("static", "login.html"))
+	})
+	//	r.POST("/register", Register)
+	r.POST("/login", Login)
+	r.POST("/logout", Logout)
+	r.Run()
 }
