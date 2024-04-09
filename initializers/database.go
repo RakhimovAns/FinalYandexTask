@@ -1,7 +1,9 @@
 package initializers
 
 import (
+	"encoding/hex"
 	"github.com/RakhimovAns/FinalYandexTask/models"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -63,4 +65,25 @@ func GetByID(ID int64) models.Expression {
 
 func SetResult(id, result interface{}) {
 	DB.Model(&expression{}).Where("id = ?", id).Updates(map[string]interface{}{"result": result, "is_counted": true})
+}
+
+func Register(customer models.User) error {
+	var existingUser models.User
+	log.Println(customer.Name)
+	if err := DB.Where("name = ?", customer.Name).First(&existingUser).Error; err == nil {
+		log.Println(existingUser.ID, existingUser.Name, existingUser.Password)
+		return models.ErrUserExist
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(customer.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	err = bcrypt.CompareHashAndPassword(hash, []byte(customer.Password))
+	if err != nil {
+		log.Println(err)
+		return models.ErrInvalidPassword
+	}
+	DB.Create(&models.User{Password: hex.EncodeToString(hash), Name: customer.Name})
+	return nil
 }

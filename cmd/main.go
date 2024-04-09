@@ -68,6 +68,22 @@ func (s *server) Status(ctx context.Context, req *desc.ID) (*desc.Result, error)
 	return Result, nil
 }
 
+func (s *server) Register(ctx context.Context, req *desc.User) (*desc.Result, error) {
+	user := models.User{
+		Name:     req.Name,
+		Password: req.Password,
+	}
+	err := initializers.Register(user)
+	if err != nil {
+		log.Printf(err.Error())
+		return nil, err
+	}
+	Result := &desc.Result{
+		Result: "registered successfully, try to log in",
+	}
+	return Result, nil
+}
+
 func main() {
 	initializers.ConnectToDB()
 	initializers.CreateTable()
