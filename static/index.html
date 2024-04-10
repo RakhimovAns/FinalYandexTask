@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .container {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .expression-form {
+            width: 45%;
+        }
+        .statuses-container {
+            width: 45%;
+        }
+        .status-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .user-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .user-actions button,
+        .user-actions a {
+            margin-left: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="expression-form">
+        <h1>Calculator</h1>
+        <form id="expressionForm">
+            <div class="form-group">
+                <label for="expression">Expression:</label>
+                <input type="text" class="form-control" id="expression" name="expression" required>
+            </div>
+            <div class="form-group">
+                <label for="addTime">Add Time:</label>
+                <input type="number" class="form-control" id="addTime" name="addTime" required>
+            </div>
+            <div class="form-group">
+                <label for="subTime">Subtract Time:</label>
+                <input type="number" class="form-control" id="subTime" name="subTime" required>
+            </div>
+            <div class="form-group">
+                <label for="multTime">Multiply Time:</label>
+                <input type="number" class="form-control" id="multTime" name="multiplyTime" required>
+            </div>
+            <div class="form-group">
+                <label for="divTime">Divide Time:</label>
+                <input type="number" class="form-control" id="divTime" name="divideTime" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+    <div class="statuses-container">
+        <h2>Expression Status:</h2>
+        <div id="statuses"></div>
+        <div class="user-actions">
+            <!-- Here will be the login message and buttons -->
+        </div>
+    </div>
+</div>
+<script>
+    function getToken() {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.startsWith('token=')) {
+                return cookie.substring(6);
+            }
+        }
+        return null;
+    }
+
+    function logout() {
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    console.error("Error:", response.statusText);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    function addButtons() {
+        var userActions = document.querySelector(".user-actions");
+        var token = getToken();
+        if (token) {
+            var logoutButton = document.createElement("button");
+            logoutButton.textContent = "Logout";
+            logoutButton.className = "btn btn-primary";
+            logoutButton.onclick = logout;
+            userActions.appendChild(logoutButton);
+        } else {
+            var loginMsg = document.createElement("p");
+            loginMsg.textContent = "Please log in to use the calculator.";
+            userActions.appendChild(loginMsg);
+
+            var loginButton = document.createElement("a");
+            loginButton.textContent = "Log in";
+            loginButton.href = "http://localhost:8080/log";
+            loginButton.className = "btn btn-primary";
+            userActions.appendChild(loginButton);
+
+            var registerButton = document.createElement("a");
+            registerButton.textContent = "Register";
+            registerButton.href = "http://localhost:8080/reg";
+            registerButton.className = "btn btn-primary";
+            userActions.appendChild(registerButton);
+        }
+    }
+
+    window.onload = function() {
+        addButtons();
+    };
+</script>
+
+<script>
+    var expressionData = {};
+
+    document.getElementById("expressionForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        var expression = document.getElementById("expression").value;
+        var addTime = parseInt(document.getElementById("addTime").value);
+        var subTime = parseInt(document.getElementById("subTime").value);
+        var multiplyTime = parseInt(document.getElementById("multTime").value);
+        var divideTime = parseInt(document.getElementById("divTime").value);
+        var formData = {
+            expression: expression,
+            addTime: addTime,
+            subTime: subTime,
+            multiplyTime: multiplyTime,
+            divideTime: divideTime
+        };
+
+        fetch('/expression', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id !== undefined) {
+                    expressionData[data.id] = {
+                        expression: expression,
+                        id: data.id
+                    };
+                    updateStatus();
+                } else {
+                    console.error("Error:", data.error);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    });
+
+    function updateStatus() {
+        var statusesContainer = document.getElementById("statuses");
+        statusesContainer.innerHTML = "";
+
+        for (var id in expressionData) {
+            var expression = expressionData[id].expression;
+
+            fetch('/status/' + id)
+                .then(response => response.json())
+                .then(data => {
+                    var statusItem = document.createElement("div");
+                    statusItem.className = "status-item";
+                    statusItem.textContent = "Expression: " + expression + ", Status: " + data['result'];
+                    statusesContainer.appendChild(statusItem);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+    }
+    setInterval(updateStatus, 5000);
+</script>
+</body>
+</html>
