@@ -28,6 +28,7 @@ func PostExpression(c *gin.Context) {
 	}
 	conn, err := grpc.Dial(grpcServerURL, grpc.WithInsecure())
 	if err != nil {
+		log.Printf(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed connect: " + err.Error()})
 		return
 	}
@@ -35,6 +36,7 @@ func PostExpression(c *gin.Context) {
 	client := desc.NewCalculusClient(conn)
 	resp, err := client.Calculate(context.Background(), &desc.Expression{Expression: expression.Expression, AddTime: expression.AddTime, DivideTime: expression.DivideTime, SubTime: expression.SubTime, MultiplyTime: expression.MultiplyTime})
 	if err != nil {
+		log.Printf(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user info from gRPC server " + err.Error()})
 		return
 	}
