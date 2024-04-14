@@ -66,6 +66,7 @@
                     // Перенаправляем на главную страницу
                     window.location.href = "http://localhost:8080/";
                 } else {
+                    console.log(data.error);
                     document.getElementById("errorMessage").textContent = data.error;
                 }
             })

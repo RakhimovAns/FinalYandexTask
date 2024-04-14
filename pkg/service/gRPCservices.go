@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	desc "github.com/RakhimovAns/FinalYandexTask/api/gen/api/service"
 	"github.com/RakhimovAns/FinalYandexTask/initializers"
 	"github.com/RakhimovAns/FinalYandexTask/models"
@@ -22,7 +23,6 @@ func (s *Server) Calculate(ctx context.Context, req *desc.Expression) (*desc.ID,
 		SubTime:      req.SubTime,
 	}
 	if err := IsValidate(expression); err != nil {
-		log.Fatalf("IsValidate err: %v", err)
 		return nil, err
 	}
 
@@ -79,9 +79,9 @@ func (s *Server) Login(ctx context.Context, req *desc.User) (*desc.Token, error)
 		Password: req.Password,
 	}
 	token, err := initializers.Login(user)
-	if err == models.ErrUserNotExist {
+	if errors.Is(err, models.ErrUserNotExist) {
 		return nil, err
-	} else if err == models.ErrInvalidPassword {
+	} else if errors.Is(err, models.ErrInvalidPassword) {
 		return nil, err
 	} else if err != nil {
 		return nil, err

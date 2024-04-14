@@ -139,7 +139,7 @@ func Login(c *gin.Context) {
 	token, err := client.Login(context.Background(), &desc.User{Name: user.Name, Password: user.Password})
 	if err != nil {
 		log.Printf(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid username or password!"})
 		return
 	}
 	livingTime := 60 * time.Minute

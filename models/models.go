@@ -29,6 +29,7 @@ type User struct {
 var ErrInvalidPassword = errors.New("invalid password")
 var ErrUserExist = errors.New("user already exist, try other name")
 var ErrUserNotExist = errors.New("no user with this name")
+var ErrInvalidExpression = errors.New("invalid format of expression")
 
 type TokenClaim struct {
 	jwt.StandardClaims
