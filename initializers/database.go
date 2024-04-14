@@ -35,7 +35,7 @@ type user struct {
 func ConnectToDB() {
 	var err error
 	dsn := os.Getenv("DB")
-	dsn = "host=postgres user=postgres password=postgres dbname=yandex port=5432 sslmode=disable"
+	dsn = "host=localhost user=postgres password=postgres dbname=yandex port=5432 sslmode=disable"
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Error with connection to database")

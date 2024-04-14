@@ -72,3 +72,23 @@ func (s *Server) Register(ctx context.Context, req *desc.User) (*desc.Result, er
 	}
 	return Result, nil
 }
+
+func (s *Server) Login(ctx context.Context, req *desc.User) (*desc.Token, error) {
+	user := models.User{
+		Name:     req.Name,
+		Password: req.Password,
+	}
+	token, err := initializers.Login(user)
+	if err == models.ErrUserNotExist {
+		return nil, err
+	} else if err == models.ErrInvalidPassword {
+		return nil, err
+	} else if err != nil {
+		return nil, err
+	}
+	return &desc.Token{Token: token}, nil
+}
+
+func (s *Server) Logout(ctx context.Context, req *desc.Empty) (*desc.Empty, error) {
+	return &desc.Empty{}, nil
+}

@@ -98,10 +98,17 @@ func RegisterHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"result": "registered successfully, try to log in"})
 }
 func Logout(c *gin.Context) {
+	conn, err := grpc.Dial(grpcServerURL, grpc.WithInsecure())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed connect: " + err.Error()})
+		return
+	}
+	defer conn.Close()
+	client := desc.NewCalculusClient(conn)
+	_, err = client.Logout(context.Background(), &desc.Empty{})
 	// Получаем список куки из запроса
 	cookies := c.Request.Cookies()
 
-	// Проходимся по всем кукам и устанавливаем MaxAge равным -1 для удаления
 	for _, cookie := range cookies {
 		newCookie := &http.Cookie{
 			Name:   cookie.Name,
@@ -112,7 +119,6 @@ func Logout(c *gin.Context) {
 		c.SetCookie(cookie.Name, "", -1, "/", "", false, true)
 		c.SetCookie(newCookie.Name, newCookie.Value, newCookie.MaxAge, newCookie.Path, newCookie.Domain, newCookie.Secure, newCookie.HttpOnly)
 	}
-
 	// Выполняем перенаправление на страницу входа
 	c.Redirect(http.StatusSeeOther, "/log")
 }
@@ -123,22 +129,22 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user data: " + err.Error()})
 		return
 	}
-	token, err := initializers.Login(user)
-	if err == models.ErrUserNotExist {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No account with this name"})
+	conn, err := grpc.Dial(grpcServerURL, grpc.WithInsecure())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed connect: " + err.Error()})
 		return
-	} else if err == models.ErrInvalidPassword {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords don't match"})
-		return
-	} else if err != nil {
+	}
+	defer conn.Close()
+	client := desc.NewCalculusClient(conn)
+	token, err := client.Login(context.Background(), &desc.User{Name: user.Name, Password: user.Password})
+	if err != nil {
+		log.Printf(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 	livingTime := 60 * time.Minute
 	expiration := time.Now().Add(livingTime)
-	// Set token in cookie
-
-	cookie := http.Cookie{Name: "token", Value: url.QueryEscape(token), Expires: expiration}
+	cookie := http.Cookie{Name: "token", Value: url.QueryEscape(token.Token), Expires: expiration}
 	http.SetCookie(c.Writer, &cookie)
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token.Token})
 }
