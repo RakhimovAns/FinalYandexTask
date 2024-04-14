@@ -37,6 +37,10 @@ ___
 ```bash
 docker-compose up 
 ```
+P.S Этот процесс может занять немного времени, ждем до появления слов 
+
+**gRPC server listening on port 50051**
+
 ___
 ### После запуска
 
@@ -71,6 +75,18 @@ ____
 
 ____
 
+## Покрытие тестами
+
+Чтобы проверить покрытие тестами, перейдите в initializers/database.go и в ConnectToDB Изменить
+```go
+	dsn = "host=postgres user=postgres password=postgres dbname=yandex port=5432 sslmode=disable"
+```
+на 
+```go
+	dsn = "host=localhost user=postgres password=postgres dbname=yandex port=5432 sslmode=disable"
+```
+
+P.S. Извините, что так вышло, не нашел способа исправить проблему, если знаете, как подскажите).
 ## Итог
 [пишите](https://t.me/Rakhimov_Ans). Не судите строго, всем удачи.
 ____
