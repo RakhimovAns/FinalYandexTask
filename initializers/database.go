@@ -112,3 +112,7 @@ func Login(customer models.User) (string, error) {
 	TokenStr, err := token.SignedString([]byte("My Key"))
 	return TokenStr, nil
 }
+
+func DeleteUser() {
+	DB.Table("users").Where("name = ?", "Ansar123").Delete(&models.User{})
+}
