@@ -183,22 +183,22 @@
     function updateStatus() {
         var statusesContainer = document.getElementById("statuses");
         statusesContainer.innerHTML = "";
-
         for (var id in expressionData) {
-            var expression = expressionData[id].expression;
-
-            fetch('/status/' + id)
-                .then(response => response.json())
-                .then(data => {
-                    var statusItem = document.createElement("div");
-                    statusItem.className = "status-item";
-                    statusItem.textContent = "Expression: " + expression + ", Status: " + data['result'];
-                    statusesContainer.appendChild(statusItem);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
+            (function(id, expression) {
+                fetch('/status/' + id)
+                    .then(response => response.json())
+                    .then(data => {
+                        var statusItem = document.createElement("div");
+                        statusItem.className = "status-item";
+                        statusItem.textContent = "Expression: " + expression + ", Status: " + data['result'];
+                        statusesContainer.appendChild(statusItem);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+            })(id, expressionData[id].expression);
         }
+
     }
     setInterval(updateStatus, 5000);
 </script>
