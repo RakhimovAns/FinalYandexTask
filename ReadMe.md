@@ -91,6 +91,10 @@ ____
 ```go
 	dsn = "host=localhost user=postgres password=postgres dbname=yandex port=5432 sslmode=disable"
 ```
+еще надо создать базу yandex
+
+
+
 
 P.S. Извините, что так вышло, не нашел способа исправить проблему, если знаете, как подскажите).
 ## Итог
